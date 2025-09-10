@@ -119,7 +119,7 @@ checkinputs <- function(input_list, tstep = c("hour","day"),plots=TRUE){
   check.vals<-function(x,mn,mx,char,unit) {
     x<-.is(x)
     sel<-which(is.na(x))
-    if (length(sel)>0) stop(paste0("Missing values in weather$",char))
+    if (length(sel)>0) stop(paste0("Missing values for",char))
     sel<-which(x<mn)
     if (length(sel)>0) {
       mx<-min(x)
@@ -261,7 +261,7 @@ checkinputs <- function(input_list, tstep = c("hour","day"),plots=TRUE){
       par(mar=c(1,1,1,1))
       par(mfrow=c(nrow,ncol))
       for(v in vars){
-        r<-.rast(input_list[[v]],input_list$dtm)
+        if(!inherits(input_list[[v]],'SpatRaster'))  r<-.rast(input_list[[v]],input_list$dtm) else r<-input_list[[v]]
         terra::time(r)<-input_list$tme
         plot_timestats_r(r,v,idx='years')
       }  }
@@ -272,7 +272,7 @@ checkinputs <- function(input_list, tstep = c("hour","day"),plots=TRUE){
       par(mar=c(1,1,1,1))
       par(mfrow=c(nrow,ncol))
       for(v in vars){
-        r<-.rast(input_list[[v]],input_list$dtm)
+        if(!inherits(input_list[[v]],'SpatRaster'))  r<-.rast(input_list[[v]],input_list$dtm) else r<-input_list[[v]]
         terra::time(r)<-input_list$tme
         plot_timestats_r(r,v,idx='months')
       }  }
