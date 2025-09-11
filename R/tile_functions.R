@@ -70,7 +70,7 @@ spatialdownscale_tiles<-function(climdata, sst, dtmf, dtmm = NA, basins = NA, wc
 
   # Calculate topographical properties -for whole area if not supplied
   if(is.logical(wca)) wca<-calculate_windcoeffs(dtmc,dtmm,dtmf,zo=2)
-  if(is.logical(basins)) basins<-basindelin(dtmf, boundary = 2)
+  if(is.logical(basins) & cad==TRUE) basins<-basindelin(dtmf, boundary = 2)
   if(is.logical(skyview) | is.logical(horizon)){
     results<-calculate_terrain_shading(dtmf,steps=24,toArrays=FALSE)
     skyview<-results$skyview
@@ -113,7 +113,7 @@ spatialdownscale_tiles<-function(climdata, sst, dtmf, dtmm = NA, basins = NA, wc
         ymx<- t$ymax
         ymn<- t$ymin
         dtmf_tile<-crop(dtmf,t)
-        basins_tile<-crop(basins,t)
+        if(cad) basins_tile<-crop(basins,t)
         wca_tile<-.is(crop(.rast(wca,dtmf),t))
         sky_tile<-crop(skyview,t)
         hor_tile<-crop(horizon,t)
