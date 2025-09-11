@@ -311,6 +311,8 @@ presdownscale<-function(pk, dtmf, dtmc, sealevel = TRUE) {
   return(pkf)
 }
 
+
+
 #' @title Downscale longwave radiation
 #' @description Downscales an array of longwave downward radiation data with option to
 #' simulate terrain shading of skyview
@@ -344,11 +346,11 @@ presdownscale<-function(pk, dtmf, dtmc, sealevel = TRUE) {
 lwdownscale<-function(lwrad, tc, tcf, tme, dtmf, dtmc, skyview=NA, terrainshade = TRUE) {
   if(class(lwrad)[1]=="array") lwrad<-.rast(lwrad,dtmc)
   lwf<-.resample(lwrad,dtmf, msk=TRUE)
-  lwupc<-.lwup(tc)
-  if(class(lwupc)[1]=="array") lwupc<-.rast(lwupc,dtmc)
-  lwupc<-.resample(lwupc,dtmf)
-  lwupf<-.lwup(tcf)
-  lwf<-lwf+(lwupc-lwupf)
+  #lwupc<-.lwup(tc)
+  #if(class(lwupc)[1]=="array") lwupc<-.rast(lwupc,dtmc)
+  #lwupc<-.resample(lwupc,dtmf)
+  #lwupf<-.lwup(tcf)
+  #lwf<-lwf+(lwupc-lwupf)
   if (terrainshade) {
     if(inherits(skyview,'logical')) skyview<-.skyview(dtmf)
     #lwf<-.rast(.is(lwf)*skyview,dtmf)

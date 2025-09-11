@@ -42,7 +42,7 @@
 #' plot_q_layers(.rast(era5input$temp,era5input$dtm))
 #' checkinputs(era5input,'hour')
 #' }
-era5toclimarray <- function(ncfile, dtmc, lsm, aoi=NA, dtr_cor_fac = 1.285, toArrays=TRUE, zo=2)  {
+era5toclimarray <- function(ncfile, dtmc, lsm, aoi=NA, dtr_cor_fac = 1.285, toArrays=TRUE, zo=10)  {
   # Get extent of aoi and check equal or smaller than dtmc and lsm inputs
   if (class(aoi)[1] != "logical"){
     if (!class(aoi)[1] %in% c("SpatRaster", "SpatVector",
@@ -55,6 +55,8 @@ era5toclimarray <- function(ncfile, dtmc, lsm, aoi=NA, dtr_cor_fac = 1.285, toAr
   }
   # If no aoi assume same as dtmc
   if(class(aoi)[1]=="logical") aoi <- dtmc
+  units(dtmc)<-'m'
+  names(dtmc)<-'Elevation'
 
   # Check vars and get time
   nc <- nc_open(ncfile)
@@ -64,23 +66,23 @@ era5toclimarray <- function(ncfile, dtmc, lsm, aoi=NA, dtr_cor_fac = 1.285, toAr
   nc_close(nc)
 
 
-  t2m <- rast(ncfile, subds = "t2m")
-  d2m <- rast(ncfile, subds = "d2m")
-  if('msl' %in% era5vars) psl <- rast(ncfile, subds = "msl") else if('sp' %in% era5vars){
-    sp <- rast(ncfile, subds = "sp")
-    psl<-sp / (((293-0.0065*dtmc)/293)^5.26) # convert to sea level pressure
+  t2m <- rast(ncfile, subds = "t2m") %>% crop(dtmc)
+  d2m <- rast(ncfile, subds = "d2m") %>% crop(dtmc)
+  if('sp' %in% era5vars) pres <- rast(ncfile, subds = "sp") %>% crop(dtmc) else if('msl' %in% era5vars){
+    psl <- rast(ncfile, subds = "msl")
+    pres<-psl * (((293-0.0065*dtmc)/293)^5.26) # convert to sea level pressure
   } else stop("Missing necessary pressure variables!!!")
 
-  u10 <- rast(ncfile, subds = "u10")
-  v10 <- rast(ncfile, subds = "v10")
-  tp <- rast(ncfile, subds = "tp")
-  msdwlwrf <- rast(ncfile, subds = "msdwlwrf")
+  u10 <- rast(ncfile, subds = "u10") %>% crop(dtmc)
+  v10 <- rast(ncfile, subds = "v10") %>% crop(dtmc)
+  tp <- rast(ncfile, subds = "tp") %>% crop(dtmc)
+  msdwlwrf <- rast(ncfile, subds = "msdwlwrf") %>% crop(dtmc)
   if (all(c("fdir", "ssrd") %in% era5vars)) {
-    fdir <- rast(ncfile, subds = "fdir")/3600
-    ssrd <- rast(ncfile, subds = "ssrd")/3600
+    fdir <- crop(rast(ncfile, subds = "fdir")/3600,dtmc)
+    ssrd <- crop(rast(ncfile, subds = "ssrd")/3600,dtmc)
   } else if (all(c("msdwswrf", "msdrswrf") %in% era5vars)) {
-    fdir <- rast(ncfile, subds = "msdwswrf")
-    ssrd <- rast(ncfile, subds = "msdrswrf")
+    fdir <- rast(ncfile, subds = "msdwswrf") %>% crop(dtmc)
+    ssrd <- rast(ncfile, subds = "msdrswrf") %>% crop(dtmc)
   } else stop("Missing necessary SW radiation variables!!!")
 
   # Aggregate dtmc if not of same resolution as ncfile data
@@ -89,47 +91,64 @@ era5toclimarray <- function(ncfile, dtmc, lsm, aoi=NA, dtr_cor_fac = 1.285, toAr
     dtmc <- terra::aggregate(dtmc, fact = agf, fun = mean, na.rm = T)
   }
 
-  # Reproject and crop all variables to aoi
-  t2m <- terra::project(t2m, aoi)
-  d2m<- terra::project(d2m, aoi)
-  psl <- terra::project(psl, aoi)
-  u10 <- terra::project(u10, aoi)
-  v10 <- terra::project(v10, aoi)
-  tp <- terra::project(tp, aoi)
-  msdwlwrf <- terra::project(msdwlwrf, aoi)
-  fdir <- terra::project(fdir, aoi)
-  ssrd <- terra::project(ssrd, aoi)
-  dtmc<-project(dtmc,aoi)
-  lsm<-project(lsm,aoi)
-
   # Convert temp to Celsius
   t2m <- t2m - 273.15
 
   # Coastal correction of temperature
+  lsm_e<-crop(lsm,dtmc)
   tmn <- .ehr(.hourtoday(as.array(t2m), min))
-  a<-as.array(rep(lsm,dim(tmn)[3]))
+  a<-as.array(rep(lsm_e,dim(tmn)[3]))
   mu<-(1-a)*dtr_cor_fac+1
   tc <- .rast(((as.array(t2m)) - tmn) * mu + tmn, t2m)
+
+  # Reproject and crop all variables to aoi
+  tc <- terra::project(tc, crs(aoi))
+  d2m<- terra::project(d2m,crs(aoi))
+  pres <- terra::project(pres, crs(aoi))
+  u10 <- terra::project(u10, crs(aoi))
+  v10 <- terra::project(v10, crs(aoi))
+  tp <- terra::project(tp, crs(aoi))
+  msdwlwrf <- terra::project(msdwlwrf, crs(aoi))
+  fdir <- terra::project(fdir, crs(aoi))
+  ssrd <- terra::project(ssrd, crs(aoi))
+  dtmc<-project(dtmc,crs(aoi))
+  lsm<-project(lsm,crs(aoi))
 
   # Calculate output variables
   ea <- .rast(.satvap(as.array(d2m)-273.15), tc)
   temp <- as.array(tc)
   relhum <- (as.array(ea)/.satvap(temp)) * 100
-  pres <- as.array(psl)/1000 ## Sea level Pressure!!!!
+  pres <- as.array(pres)/1000 ## Surface Pressure!!!!
   swrad <- as.array(ssrd)
   difrad <- swrad - as.array(fdir)
   lwrad <- as.array(msdwlwrf)
-  windspeed <- sqrt(as.array(u10)^2 + as.array(v10)^2) * log(67.8 *
-                                                               zo - 5.42)/log(67.8 * 10 - 5.42)
+  windspeed <- sqrt(as.array(u10)^2 + as.array(v10)^2) * log(67.8 * zo - 5.42)/log(67.8 * 10 - 5.42)
   winddir <- as.array((terra::atan2(u10, v10) * 180/pi + 180)%%360)
   prec <- as.array(tp) * 1000
-  out <- list(dtm = dtmc, tme = tme, windheight_m = 10, tempheight_m = 2)
+
+  # Format outputs
+  out <- list(dtm = dtmc, tme = tme, windheight_m = zo, tempheight_m = 2)
   climout <- list(temp = temp, relhum = relhum, pres = pres,
                   swrad = swrad, difrad = difrad, lwrad = lwrad, windspeed = windspeed,
                   winddir = winddir, prec = prec)
-
-  if (toArrays == FALSE) climout <- lapply(climout, .rast, tem = dtmc)
-
+  climunits<-c('degC','%','kPa','watt/m^2','watt/m^2','watt/m^2','m/s','deg','mm')
+  # Round values
+  climround<-c(2,1,1,1,1,1,3,1,4)
+  for(n in 1:length(climout)){
+    v <- names(climout)[n]
+    climout[[v]]<-round(climout[[v]],climround[n])
+  }
+  # For spatrasters add units and time
+  if (toArrays == FALSE){
+    climout <- lapply(climout, .rast, tem = dtmc)
+    for(n in 1:length(climout)){
+      v <- names(climout)[n]
+      u<-climunits[n]
+      terra::time(climout[[v]])<-tme
+      names(climout[[v]])<-tme
+      units(climout[[v]])<-u
+    }
+  }
   out <- c(out, climout)
   return(out)
 }
