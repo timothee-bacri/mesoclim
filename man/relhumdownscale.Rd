@@ -7,7 +7,7 @@
 relhumdownscale(rh, tcc, tcf, dtmc, rhmin = 20)
 }
 \arguments{
-\item{rh}{a coarse-resolution array of relative humidities (percentage)}
+\item{rh}{a coarse-resolution array of relative humidities (percentage) or spatraster}
 
 \item{tcc}{a coarse-resolution array of temperatures (deg C)}
 

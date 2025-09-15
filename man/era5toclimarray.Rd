@@ -11,7 +11,7 @@ era5toclimarray(
   aoi = NA,
   dtr_cor_fac = 1.285,
   toArrays = TRUE,
-  zo = 2
+  zo = 10
 )
 }
 \arguments{

@@ -4,7 +4,7 @@
 \alias{calculate_windcoeffs}
 \title{Calculate wind coefficients - for use in wind downscaling}
 \usage{
-calculate_windcoeffs(dtmc, dtmm, dtmf, zo)
+calculate_windcoeffs(dtmc, dtmm, dtmf, zo, toArray = TRUE)
 }
 \arguments{
 \item{dtmc}{\itemize{
@@ -21,6 +21,10 @@ calculate_windcoeffs(dtmc, dtmm, dtmf, zo)
 
 \item{zo}{\itemize{
 \item wind height in metres of coeeficients
+}}
+
+\item{toArray}{\itemize{
+\item if FALSE will produce a spatraster stack otherwise as 3D array
 }}
 }
 \value{

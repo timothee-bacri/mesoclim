@@ -64,7 +64,7 @@ The provision of \code{dtmm} allows this ratio to be derived accoutning for land
 sea outside the boundaries of the study area.
 }
 \examples{
-climdata<- read_climdata(mesoclim::ukcpinput)
+climdaily<- read_climdata(mesoclim::ukcpinput)
 climhrly<-temporaldownscale(climdaily, adjust = TRUE, clearsky=NA, srte = 0.09, relmin = 10, noraincut = 0)
 dtmf<-terra::rast(system.file("extdata/dtms/dtmf.tif",package="mesoclim"))
 dtmm<-terra::rast(system.file("extdata/dtms/dtmm.tif",package="mesoclim"))
@@ -74,5 +74,8 @@ sst<-terra::unwrap(ukcp18sst)
 tempf<-temphrly_downscale(climhrly, sst, dtmf, dtmm, basins, uzf = wsfhr,tempvar="temp")
 terra::panel(tempf[[c(1,6,12,18)]],main=paste('Temperature',c('00:00', '06:00', '12:00', '18:00'),' on 1 May 2018'))
 matplot(terra::time(tempf),unlist(terra::global(tempf,mean,na.rm=TRUE)), type = "l", lty = 1, main='Mean hourly temperature of whole area')
+# With sea temperature as a vector
+sst<-seq(10,18,length=length(climhrly$tme))
+tempf<-temphrly_downscale(climhrly, sst, dtmf, dtmm, basins, uzf = wsfhr,tempvar="temp")
 }
 \keyword{spatial}

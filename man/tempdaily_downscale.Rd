@@ -25,7 +25,7 @@ Expects variables to include a \code{tmin} and \code{tmax}}
 \item{tmean}{a coarse resolution array or spatRaster of daily mean temperatures identical to climdata inputs.
 If NA will calculate from hourluy downscaling of tmin and tmax in \code{climdata}}
 
-\item{sst}{a SpatRast of sea-surface temperature data (deg C) timeseries that overlaps climdata$tme}
+\item{sst}{a vector or SpatRast of sea-surface temperature data (deg C) timeseries of same length or layer number as timesteps in climdata}
 
 \item{dtmf}{a high-resolution SpatRast of elevations}
 
@@ -75,5 +75,8 @@ basins<-basindelin(dtmf, boundary = 2)
 wsf<-winddownscale(climdata$windspeed, climdata$winddir, dtmf, dtmm, climdata$dtm, zi=climdata$windheight_m)
 dailytemps<-tempdaily_downscale(climdata,NA,terra::unwrap(mesoclim::ukcp18sst),dtmf,dtmm,basins,wsf,cad = TRUE,coastal = TRUE,2,2)
 terra::panel(c(dailytemps$tmin[[13]],dailytemps$tmax[[13]],dailytemps$tmean[[13]]),main=paste(c("Tmin","Tmax","Tmean"),"13/05/2018"))
+# With sea temperature as a vector
+sst<-seq(10,13.1,length=31)
+dailytemps<-tempdaily_downscale(climdata,NA,sst,dtmf,dtmm,basins,wsf,cad = TRUE,coastal = TRUE,2,2)
 }
 \keyword{spatial}

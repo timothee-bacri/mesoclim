@@ -84,6 +84,7 @@ The function converts 360 day UKCP18 to actual calendar data by reassignment and
 Returned climate data will be at the extent, corrdinate reference system of the UKCP18 data requested, which can vary between domains and collections.
 The extent will be provided by the \code{dtm} which, if necessary, will be re-projected and resampled to the CRS and resolution of UKCP18 data requested.
 For regional UKCP18 data, it is recommended that 'dtm' is derived from the original orography data available for download.
+The dtm may also be used to estimate albedo on the basis of whether land or sea.
 }
 \examples{
  \dontrun{

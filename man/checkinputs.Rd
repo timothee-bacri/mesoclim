@@ -12,7 +12,7 @@ checkinputs(input_list, tstep = c("hour", "day"), plots = TRUE)
 \item{tstep}{string decribing whether input data is by hour or day}
 }
 \value{
-NO VALUE RETURN but may print warnings and summary stats and plots of each variable if requested
+UNMODIFIED input_list - but may print warnings and summary stats and plots of each variable if requested
 }
 \description{
 Check and summarise coarse resolution climate data inputs

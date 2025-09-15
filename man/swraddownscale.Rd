@@ -65,5 +65,8 @@ climdata<- read_climdata(mesoclim::ukcpinput)
 sw<-swdownscale(climdata$swrad,dtmf=terra::rast(system.file('extdata/dtms/dtmf.tif',package='mesoclim')), dtmc=climdata$dtm,terrainshade = TRUE)
 sw<-sw$swf
 terra::panel(c(sw[[1]],sw[[5]],sw[[10]],sw[[20]]),main=paste0("SW down ",c(1,5,10,20),"/05/2018"))
+hrsw <- swrad_dailytohourly(climdata$swrad,climdata$tme,r=climdata$dtm)
+hrswf<-swdownscale(hrsw,dtmf=terra::rast(system.file('extdata/dtms/dtmf.tif',package='mesoclim')), dtmc=climdata$dtm,terrainshade = TRUE)
+terra::panel(c(hrswf$swf[[2]],hrswf$swf[[7]],hrswf$swf[[14]],hrswf$swf[[20]]),main=paste0("SW down ",c(1,6,13,19),"hrs on 1/5/2018"))
 }
 \keyword{spatial}

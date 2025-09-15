@@ -36,7 +36,7 @@ temporaldownscale(
 }}
 
 \item{noraincut}{\itemize{
-\item single numeric value indicating rainfall amounts that should
+\item single numeric value indicating daily rainfall amounts that should
 be considered as no rain (see)
 }}
 

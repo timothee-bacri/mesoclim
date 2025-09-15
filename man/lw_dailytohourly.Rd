@@ -50,6 +50,7 @@ but an adequate approximation is derived if substituted by air temperature.
 TO DO - Option of providing cloud cover data to correct sky emissivity values??
 }
 \examples{
+climdaily<-read_climdata(ukcpinput)
 # ========================================================================= #
 # ~~~~~~~~~~~~~~~~~~~~ input provided as SpatRaster ======================= #
 # ========================================================================= #
