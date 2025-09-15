@@ -27,15 +27,13 @@ load_all()
 ```
 
 
-# Spatial Downscaling of regional climate data
+# Spatial Downscaling of UKCP18 regional climate data
 
 ## Data Preparation
 
-###UKCP18 climate inputs
-
 Coarse resolution climate and ancillary data (including sea surface temperature data where appropriate) will need to be prepared as outlined in `vignette('mesoclim_data_requirements', package='mesoclim')`.  
 
-Here we load package data previously saved (using `write_climdata`) as .rda files using the`read_climdata`functions. 
+Here we load package data previously saved using `write_climdata` function as .Rds files using the`read_climdata`functions. 
 
 Sea surface data is also required for downscaling and in this example we use the package data derived from REFERENCE
 
@@ -45,9 +43,10 @@ climdata<-read_climdata(mesoclim::ukcpinput)
 sst<-unwrap(mesoclim::ukcp18sst)
 dtmc<-climdata$dtm
 
-# Example plots
-for(v in c('tmin','tmax','relhum','pres','swrad','lwrad','windspeed','winddir','prec')) plot(.rast(climdata[[v]],climdata$dtm)[[1]],main=v)
-plot(crop(project(sst[[1]],crs(climdata$dtm)),climdata$dtm),main="Sea surface temperature")
+# Example plots of 1st day of year
+par(mfrow=c(2,3))
+for(v in c('tmin','tmax','relhum','pres','swrad','lwrad','windspeed','winddir','prec')) plot(climdata[[v]][[1]],main=paste(v,terra::time(climdata[[v]][[1]])))
+plot(crop(project(sst[[1]],crs(climdata$dtm)),climdata$dtm),main=paste("Sea surface temperature on",terra::time(climdata[[v]][[1]])))
 ```
 
 ### Defining the area of interest
@@ -69,7 +68,9 @@ plot(aoi,add=TRUE,col="red")
 
 ### Bias correction of UKCP inputs
 
-Using pre-calculated bias correction models for UKCP18 rcm model member 01. The UKCP18 cells that contain land exceeds that covered by the UKCP18 orography and therefore climate data for these coastal cells (defined as sea in UKCP18) are also bias corrected.
+Here we use pre-calculated bias correction models for UKCP18 RCM model member 01. The UKCP18 cells that contain land exceeds that covered by the UKCP18 orography and therefore climate data for these coastal cells (defined as sea in UKCP18) are also bias corrected.
+
+During bias correction, UKCP18 cells that do not include any land cells (defined during the bias correction model training) are masked out. Wind direction is not bias corrected and therefore remains unmasked.
 
 ```{r bias_correction}
 # Get pre-calculated models
@@ -78,8 +79,11 @@ model_list<-readRDS(file.path(dir_bcmodels,paste0('bias_correct_models_01_2020_2
 
 # Apply  models
 climdata<-biascorrect_climdata(climdata,model_list,prec_thold =0.01)
+par(mfrow=c(2,3))
+for(v in c('tmin','tmax','relhum','pres','swrad','lwrad','windspeed','winddir','prec')){
+  plot(climdata[[v]][[1]],main=paste(v,climdata$tme[[1]]))
+}
 
-for(v in c('tmin','tmax','relhum','pres','swrad','lwrad','windspeed','winddir','prec')) plot(climdata[[v]][[1]],main=v)
 
 ```
 
@@ -90,7 +94,7 @@ The `spatialdownscale` wrapper function allows downscaling of all climate variab
 ```{r onestep-spdown}
 # Downscale to 50metres one month of UKCP 12km climate data
 t0<-now()
-mesoclimate<-spatialdownscale(climdata=climdata, sst=sst, dtmf, dtmm, basins = NA,  wca=NA, skyview=NA, horizon=NA, cad=TRUE, coastal = TRUE, thgto =2, whgto=2, rhmin = 20, pksealevel = FALSE, patchsim = FALSE,  terrainshade = TRUE, precipmethod = "Elev", fast = TRUE, noraincut = 0.01, toArrays=FALSE) # 
+mesoclimate<-spatialdownscale(climdata=climdata, sst=sst, dtmf, dtmm, basins = NA,  wca=NA, skyview=NA, horizon=NA, cad=TRUE, coastal = TRUE, thgto =2, whgto=2, include_tmean=TRUE, rhmin = 20, pksealevel = FALSE, patchsim = TRUE,  terrainshade = TRUE, precipmethod = "Elev", fast = TRUE, noraincut = 0.01, toArrays=FALSE) # 
 print(now()-t0)
 
 # To write file:
@@ -102,7 +106,7 @@ print(now()-t0)
 
 ### Display outputs
 
-In tabular form for all times and locations:
+In tabular form for all times and grid cells:
 
 ```{r output_table}
 climvars<-c('tmin','tmax','relhum','pres','swrad','lwrad','windspeed','winddir','prec')
@@ -114,9 +118,10 @@ print(stats_df)
 
 Or as selected rasters for days corresponding to spatial quantiles (ie days where spatial means across the area of interest are at their min, median and max values):
 
-```{r map-outputs, message=FALSE, warning=FALSE}
+```{r map-outputs, message=FALSE, warning=FALSE,out.width="50%"}
+climvars<-c('tmin','tmax','relhum','pres','swrad','lwrad','windspeed','winddir','prec')
 p=c(0, 0.5, 1)
-par(mfrow=c(1,3), mai=c(1,0.1,0.1,0.1))
+#par(mfrow=c(1,3), mai=c(1,0.1,0.1,0.1))
 for(var in climvars){
   r<-mesoclimate[[var]]
   lyrstat<-global(r,mean,na.rm=TRUE)
@@ -171,7 +176,7 @@ An alternative function is available for downscaling across large areas. The pro
 
 Example below downscales to the whole of the Lizard for just a single month using small tiles for demonstration purposes. Run time may be up to 3-4 mins.
 
-```{r downscale_by_tiles}
+```{r downscale_by_tiles,,out.width="50%"}
 dtmf<-rast(system.file("extdata/dtms/lizard50m.tif",package="mesoclim"))
 dtmm<-rast(system.file("extdata/dtms/dtmm.tif",package="mesoclim"))
 sstdata<-unwrap(mesoclim::ukcp18sst)
@@ -204,9 +209,9 @@ for(var in climvars){
 ```
 
 
-## Multiple step downscaling - or single process downscale
+## Multiple step downscaling - downscaling of individual variables or effects
 
-In certain cases not all variables are required in the final downscaled product. Spatial downscaling can be decomposed to the effects of specific physical processes, such as the effect of elevation, coastal or cold air drainage on temperature. Specific functions for downscaling particular effects can be applied without needing to undertake full downscaling using all processes.
+In certain cases not all variables are required in the final downscaled product. Spatial downscaling can be decomposed to the effects of specific physical processes, such as the effect of elevation, coastal or cold air drainage on temperature. Specific functions for downscaling particular effects can be run without needing to undertake full downscaling using all processes.
 
 
 ### Possible Improvements
@@ -217,64 +222,72 @@ In certain cases not all variables are required in the final downscaled product.
 
 ### Topographical effects pre-processing
 
-Option to pre-calculate those spatial properties that temporally constant - this can improve performance if spatial downscaling performed within a loop or as part of batch processing. 
+Pre-calculation of those spatial properties that temporally constant can improve performance if spatial downscaling performed within a loop or as part of batch processing. 
 
 ```{r topo prprocess}
 dtmf<-rast(system.file("extdata/dtms/dtmf.tif",package="mesoclim"))
 # Windshelter coef
-wca<-calculate_windcoeffs(dtmc,dtmm,dtmf,zo=2)
+wca<-calculate_windcoeffs(dtmc,dtmm,dtmf,zo=2,toArray=FALSE)
 # Cold air drainage basins - as above and ONLY if using coastal correction - can take several minutes for large areas
 basins<-basindelin(dtmf, boundary = 2)
 #terrain shading
 results<-calculate_terrain_shading(dtmf,steps=24,toArrays=FALSE)
 skyview<-results$skyview
 horizon<-results$horizon
+
+# Example plots
+plot(wca,nr=2)
+
+r<-c(basins,skyview[[1]])
+names(r)<-c("Drainage basins","Skyview")
+plot(r)
 ```
 
 ### Wind
 
-Windspeed downscaling aims to capture the effect of both elevation and the sheltering effects of topography that are in turn dependent on wind direction and height above ground. The output height above ground can be defined by the parametere `zo`.
+Windspeed downscaling aims to capture the effect of both elevation and the sheltering effects of topography that are in turn dependent on wind direction and height above ground. The output height above ground can be defined by the parameter `zo`.
 
-```{r wind_dscale}
+```{r wind_dscale,out.width="50%"}
 climdata<-read_climdata(mesoclim::ukcpinput)
 windspeed<-winddownscale(climdata$windspeed, climdata$winddir, dtmf, dtmm, climdata$dtm, wca=wca, zi = climdata$windheight_m, zo=2)
-plot(windspeed[[13]])
+plot(windspeed[[13]],main=paste("Windspeed",terra::time(windspeed[[13]])))
 ```
 
-### Temperature downscaling
+### Daily temperature downscaling
 
 If only concerned with temperature downscaling, the wrapper function `tempdaily_downscale` allows daily mean, max and minima values to be downscaled using a single function. Options include applying estimates of the effects of coastal and cold air drainage processes to the downscaling.
 
 ```{r temp-dscale}
-dailytemps<-tempdaily_downscale( climdata,  tmean= NA, sst, dtmf, dtmm, basins = basins, uzf = windspeed, 
-                                cad = TRUE, coastal = TRUE, whgto = 2, thgto = 2 )
+dailytemps<-tempdaily_downscale( climdata,  tmean= NA, sst, dtmf, dtmm, basins = basins, uzf = windspeed,  cad = TRUE, coastal = TRUE, whgto = 2, thgto = 2 )
 tmin<-dailytemps$tmin
 tmax<-dailytemps$tmax
 tmean<-dailytemps$tmean
+
 # Diurnal range
 diurnaltmp<-tmax-tmin
 names(diurnaltmp)<-rep('Diurnal_temp_range',nlyr(diurnaltmp))
-plot(c(tmin[[13]],tmax[[13]],diurnaltmp[[13]]),main=paste(c("Tmin","Tmax","Diurnal range"),"13/05/2018"))
+
+plot(c(tmin[[13]],tmax[[13]],diurnaltmp[[13]]),main=paste(c("Tmin","Tmax","Diurnal range"),terra::time(tmax[[13]])),nr=1)
 ```
 
 ### Pressure 
 
 Downscales atmospheric or sea level pressure to atmospheric pressure while accounting for finer resolution variation in terrain 
 
-```{r pressure_dscale}
+```{r pressure_dscale,out.width="50%"}
 pres<-presdownscale(climdata$pres, dtmf, climdata$dtm, sealevel = FALSE)
-plot(pres[[13]],main="Pressue")
+plot(pres[[13]],main=paste("Atmos pressure",terra::time(pres[[13]])))
 ```
 
 ### Relative Humidity 
 
 Downscales atmospheric or sea level pressure to atmospheric pressure while accounting for finer resolution variation in terrain 
 
-```{r rh_dscale}
+```{r rh_dscale,out.width="50%"}
 tmeanc<-.hourtoday(temp_dailytohourly(climdata$tmin, climdata$tmax, climdata$tme),mean) 
 rhf<-relhumdownscale(climdata$relhum,tcc=tmeanc,tcf=dailytemps$tmean,dtmc=climdata$dtm,rhmin=20)
 
-plot(rhf[[13]],main="Relative Humidity 13/05/2018")
+plot(rhf[[13]],main=paste("Relative humidity",terra::time(rhf)[[13]]))
 ```
 
 ### Longwave radiation downscale
@@ -285,7 +298,7 @@ Longwave downscaling accounts for the effects of terrain on the skyview.
 tmean_c<-(climdata$tmin+climdata$tmax)/2
 lwrad<-lwdownscale(lwrad=climdata$lwrad,tc=tmean_c,tcf=tmean, climdata$tme, dtmf=dtmf, dtmc=climdata$dtm, skyview, terrainshade=TRUE)
                    
-plot(lwrad[[13]],main="LW radiation 13/05/2018")
+plot(lwrad[[13]],main=paste("LW downward radiation",terra::time(rhf)[[13]]))
 
 ```
 
@@ -299,16 +312,16 @@ swrad_noef<-swdownscale(climdata$swrad,dtmf=dtmf,dtmc=climdata$dtm,patchsim = FA
 swrad_tshd<-swdownscale(climdata$swrad,dtmf=dtmf,dtmc=climdata$dtm,patchsim = FALSE,hor=horizon,terrainshade = TRUE)
 swrad_cldtshd<-swdownscale(climdata$swrad,dtmf=dtmf,dtmc=climdata$dtm,patchsim = TRUE,hor=horizon,terrainshade = TRUE)
 
-swrad_compare<-c(swrad_noef$swf[[13]],swrad_tshd$swf[[13]],swrad_cldtshd$swf[[13]])
+swrad_compare<-c( swrad_noef$swf[[13]],swrad_tshd$swf[[13]],swrad_cldtshd$swf[[13]])
 names(swrad_compare)<-c("SW no effect","SW terrainshade","SW terrainshade & patchsim")                      
-plot(swrad_compare)
+plot(swrad_compare,nr=1)
 ```
 
 ### Precipitation
 
 The `precipdownscale()` function provides various options and methods to downscale rainfall. 
 
-```{r precip-dscale}
+```{r precip-dscale,out.width="50%"}
 method<-'Elev'
 
 precelev<-precipdownscale(climdata$prec,dtmf,climdata$dtm,
@@ -316,7 +329,7 @@ precelev<-precipdownscale(climdata$prec,dtmf,climdata$dtm,
   nsim = dim(climdata$prec)[3] )
 terra::time(precelev)<-climdata$tme
 
-plot(precelev[[15]])
+plot(precelev[[15]],main=paste("Precipitation",terra::time(precelev)[[13]]))
 ```
 
 
