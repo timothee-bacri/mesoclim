@@ -3,10 +3,10 @@
 #' @param dtmm - medium resolution raster covering wider extent than dtmf
 #' @param dtmf - fine scale raster of downscaling area
 #' @param zo - wind height in metres of coeeficients
-#'
+#' @param toArray - if FALSE will produce a spatraster stack otherwise as 3D array
 #' @return wca2 - array of wind coeeficients for each of 8 wind directions
 #' @export
-calculate_windcoeffs<-function(dtmc,dtmm,dtmf,zo){
+calculate_windcoeffs<-function(dtmc,dtmm,dtmf,zo,toArray=TRUE){
   if(all(terra::res(dtmm)==terra::res(dtmf))){
     dtmm_res<-round(exp( ( log(terra::res(dtmc)[1]) + log(terra::res(dtmf)[1]) ) / 2 ))
     dtmw<-terra::aggregate(dtmm,dtmm_res / res(dtmf),  na.rm=TRUE)
@@ -17,6 +17,10 @@ calculate_windcoeffs<-function(dtmc,dtmm,dtmf,zo){
   # smooth results
   wca2<-wca
   for (i in 0:7) wca2[,,i+1]<-0.25*wca[,,(i-1)%%8+1]+0.5*wca[,,i%%8+1]+0.25*wca[,,(i+1)%%8+1]
+  if(!toArray){
+    wca2<-.rast(wca2,dtmf)
+    names(wca2)<-paste("Shelter coef dir",seq(1:nlyr(wca2)))
+  }
   return(wca2)
 }
 
