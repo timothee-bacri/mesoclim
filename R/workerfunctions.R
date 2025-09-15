@@ -283,7 +283,7 @@
 
     # Insert and fill missing date layers of output r - could use zoo::na.approx or na.spline
     rout[[c(which(tme %in% tmein))]]<-r[[which(tmein %in% tme)]]
-    rout<-terra::approximate(rout,method="linear")
+    rout<-terra::approximate(rout,method="linear",rule=2)
 
     # Return only values in tmeout
     sel<-which(as.POSIXlt(terra::time(rout)) %in% tmeout)
