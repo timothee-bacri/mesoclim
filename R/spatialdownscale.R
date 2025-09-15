@@ -297,7 +297,7 @@ temphrly_downscale<-function(climhrly, sst, dtmf, dtmm = NA, basins = NA, uzf = 
 presdownscale<-function(pk, dtmf, dtmc, sealevel = TRUE) {
   if (class(pk)[1] == "array"){
     pk<-.rast(pk,dtmc)
-    tme<-NA } else tme<-time(pk)
+    tme<-NA } else tme<-terra::time(pk)
   dtmc<-ifel(is.na(dtmc),0,dtmc)
   # Convert to sea level
   if (sealevel == FALSE) {
@@ -356,6 +356,7 @@ lwdownscale<-function(lwrad, tc, tcf, tme, dtmf, dtmc, skyview=NA, terrainshade 
     #lwf<-.rast(.is(lwf)*skyview,dtmf)
     lwf<-lwf*skyview
   }
+  terra::time(lwf)<-terra::time(lwrad)
   return(lwf)
 }
 
@@ -577,7 +578,7 @@ winddownscale <- function(wspeed, wdir, dtmf, dtmm, dtmc, wca=NA, zi=10, zo = 2)
     dtmm<-terra::aggregate(dtmm,dtmm_res / res(dtmf),  na.rm=TRUE)
   }
   # If not supplied, calculate terrain adjustment coefs for 8 directions at wind height zo
-  if(class(wca)[1]=='logical') wca2<-calculate_windcoeffs(dtmc,dtmm,dtmf,zo) else wca2<-wca
+  if(class(wca)[1]=='logical') wca2<-calculate_windcoeffs(dtmc,dtmm,dtmf,zo) else wca2<-.is(wca)
   # Calculate wind direction of centre of study area
   if(inherits(wdir,"SpatRaster")) wdr<-wdir else wdr<-.rast(wdir,dtmc)
   ll<-.latlongfromrast(wdr)
@@ -600,11 +601,12 @@ winddownscale <- function(wspeed, wdir, dtmf, dtmm, dtmc, wca=NA, zi=10, zo = 2)
   # adjust back to output height if not 2 m NOT NEEDED as already at zo!!
   #if (uz !=2) ws<-ws*log(67.8*uz-5.42)/4.8699
   ws<-.rast(ws,dtmf)
+  terra::time(ws)<-terra::time(wspeed)
   return(ws)
 }
 #' @title Downscale relative humidity accounting for downscaled temperature
 #' @description The function `relhumdownscale` is used to spatially downscale relative
-#' @param rh a coarse-resolution array of relative humidities (percentage)
+#' @param rh a coarse-resolution array of relative humidities (percentage) or spatraster
 #' @param tcc a coarse-resolution array of temperatures (deg C)
 #' @param tcf a fine-resolution SpatRast of temperatures (deg C) as returned by
 #' [temphrly_downscale()] or [tempdaily_downscale()]
@@ -634,6 +636,7 @@ relhumdownscale<-function(rh, tcc, tcf, dtmc, rhmin = 20) {
   rhf<-(eaf/.satvap(tcf))*100
   rhf<-ifel(rhf>100,100,rhf)
   rhf<-ifel(rhf<rhmin,rhmin,rhf)
+  terra::time(rhf)<-terra::time(rh)
   return(rhf)
 }
 #' @title Downscale precipitation accounting for elevation effects
@@ -783,6 +786,7 @@ precipdownscale <- function(prec, dtmf, dtmc, method = "Tps", fast = TRUE, norai
   a2<-array(mm,dim=dim(a))
   # Convert to raster
   precf<-.rast(a2,dtmf)
+  terra::time(precf)<-terra::time(prec)
   return(precf)
 }
 
