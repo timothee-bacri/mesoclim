@@ -120,9 +120,20 @@ daily100m<-lapply(mesoclimate,function(x) if(class(x)[1]=="SpatRaster") wrap(cro
 lapply(daily100m,class)
 usethis::use_data(daily100m,overwrite=TRUE)
 
+##### Scotland HIghlands 20x20 1km res dtmf
+# UKCP 2015
+e<-ext(c( 250000, 270000, 920000, 940000))
+highland_dtmf<-crop(aggregate(dtmuk,20),e)
+writeRaster(highland_dtmf,"inst/extdata/dtms/altnaharra_1km.tif",overwrite=TRUE)
+usethis::use_data(ukcphighland,overwrite=TRUE)
+#Haduk 2015
+writeRaster(hadukhland,"inst/extdata/haduk/altnaharra_rainfall.tif",overwrite=TRUE)
 
-
-
+# climate data ukcp native res
+sel<-which(lapply(ukcphighland,class)=="SpatRaster")
+ukcphighland[sel]<-lapply(ukcphighland[sel],wrap)
+usethis::use_data(ukcphighland,overwrite=TRUE)
+ukcphighland<-read_climdata(mesoclim::ukcphighland)
 ########################## Parcels shape file ##########################
 
 
@@ -161,6 +172,9 @@ plot(lsm1km.r)
 writeRaster(lsm1km.r,"inst/extdata/biascorrect/uk_seamask_1km.tif",overwrite=TRUE)
 
 
-##### ERA5 data for bias corrections - southwest
-
-
+##### Altnaharra daily climate data and dtmm
+altnaharra_era5daily_2020
+usethis::use_data(altnaharra_era5daily_2020,overwrite=TRUE)
+altnaharra_5km<-aggregate(dtmuk,100) %>% crop(vect(st_buffer(locos.sf,50000)))
+plot(altnaharra_5km)
+plot(dtm1km,add=T)
