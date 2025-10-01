@@ -1242,7 +1242,7 @@
       lswgt<- -0.1095761+p2*(llsr+3.401197)-0.1553487*llsm
       swgt<-.rast(1/(1+exp(-lswgt)),tc)
       tcp<-swgt*sstf+(1-swgt)*tc
-      # Correct using area mean via aggreg???? - NOT suitable when tiling
+      # Correct using area mean via aggregation is NOT suitable when tiling
       # BUT Increases temperature range significantly across while area!!!
       # Perhaps should only be applied to cells with a coastal effect??
       if(correct){
@@ -1255,6 +1255,9 @@
   } else tcp<-tc
   return(tcp)
 }
+
+
+
 
 # ** Following is a bit of a code dump. We won't need it all:
 # NB:
