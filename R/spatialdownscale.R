@@ -697,7 +697,7 @@ precipdownscale <- function(prec, dtmf, dtmc, method = "Tps", fast = TRUE, norai
   if (method != "Tps" & method != "Elev") stop("method must be one of Tps or Elev")
   v<-as.vector(prec[[1]])
   v<-v[is.na(v) == FALSE]
-  if (method == "Tps" & length(v) < 500) {
+  if (method == "Tps" & length(v) < 10) {
     warning("Not enough non NA cells for sensible thin-plate spline downscale. Changed method to Elev")
     method <- "Elev"
   }
