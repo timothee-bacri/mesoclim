@@ -736,8 +736,8 @@ precipdownscale <- function(prec, dtmf, dtmc, method = "Tps", fast = TRUE, norai
   r1<-.rast(m1,prec)
   # Calculate rain day fraction
   m2<-m
-  m2[m>=noraincut]<-1
-  m2[m<noraincut]<-0
+  m2[m>noraincut]<-1.  #### NEEDS TO WORK WITH ZERO!!!
+  m2[m<=noraincut]<-0
   m2<-apply(m2,c(1,2),sum)/dim(m2)[3]
   r2<-.rast(m2,prec)
   # Calculate wettest days regionally to enable sensible assignment of rain
@@ -765,7 +765,7 @@ precipdownscale <- function(prec, dtmf, dtmc, method = "Tps", fast = TRUE, norai
     prat<-9.039606e-03+1.818067e-03*edif-2.923351e-04*dtmf-6.471352e-07*dtmf*edif
     rtmc<-.resample(r1,dtmf)
     rf1<-rtmc*exp(prat)
-    # Downscaled rain day fraction
+    # Downscaled rain day fraction - THIS NEEDS ATTENTION
     prat<- -2.787208e-03+-2.787208e-03*edif-2.787208e-03*dtmf-4.503742e-07*dtmf*edif
     rdmc<-.resample(r2,dtmf)
     rf2<-rdmc*exp(prat)

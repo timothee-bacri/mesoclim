@@ -178,3 +178,8 @@ usethis::use_data(altnaharra_era5daily_2020,overwrite=TRUE)
 altnaharra_5km<-aggregate(dtmuk,100) %>% crop(vect(st_buffer(locos.sf,50000)))
 plot(altnaharra_5km)
 plot(dtm1km,add=T)
+
+sel<-which(lapply(shap_era5daily_2020,class)=="SpatRaster")
+shap_era5daily_2020[sel]<-lapply(shap_era5daily_2020[sel],wrap)
+usethis::use_data(shap_era5daily_2020,overwrite=TRUE)
+
