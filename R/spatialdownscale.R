@@ -346,11 +346,11 @@ presdownscale<-function(pk, dtmf, dtmc, sealevel = TRUE) {
 lwdownscale<-function(lwrad, tc, tcf, tme, dtmf, dtmc, skyview=NA, terrainshade = TRUE) {
   if(class(lwrad)[1]=="array") lwrad<-.rast(lwrad,dtmc)
   lwf<-.resample(lwrad,dtmf, msk=TRUE)
-  #lwupc<-.lwup(tc)
-  #if(class(lwupc)[1]=="array") lwupc<-.rast(lwupc,dtmc)
-  #lwupc<-.resample(lwupc,dtmf)
-  #lwupf<-.lwup(tcf)
-  #lwf<-lwf+(lwupc-lwupf)
+  lwupc<-.lwup(tc)
+  if(class(lwupc)[1]=="array") lwupc<-.rast(lwupc,dtmc)
+  lwupc<-.resample(lwupc,dtmf)
+  lwupf<-.lwup(tcf)
+  lwf<-lwf+(lwupc-lwupf)
   if (terrainshade) {
     if(inherits(skyview,'logical')) skyview<-.skyview(dtmf)
     #lwf<-.rast(.is(lwf)*skyview,dtmf)
@@ -601,6 +601,7 @@ winddownscale <- function(wspeed, wdir, dtmf, dtmm, dtmc, wca=NA, zi=10, zo = 2)
   # adjust back to output height if not 2 m NOT NEEDED as already at zo!!
   #if (uz !=2) ws<-ws*log(67.8*uz-5.42)/4.8699
   ws<-.rast(ws,dtmf)
+  ws<-mask(ws,dtmf)
   terra::time(ws)<-terra::time(wspeed)
   return(ws)
 }
@@ -766,7 +767,7 @@ precipdownscale <- function(prec, dtmf, dtmc, method = "Tps", fast = TRUE, norai
     rtmc<-.resample(r1,dtmf)
     rf1<-rtmc*exp(prat)
     # Downscaled rain day fraction - THIS NEEDS ATTENTION
-    prat<- -2.787208e-03+-2.787208e-03*edif-2.787208e-03*dtmf-4.503742e-07*dtmf*edif
+    prat<- 2.787208e-03+2.787208e-03*edif-2.787208e-03*dtmf-4.503742e-07*dtmf*edif
     rdmc<-.resample(r2,dtmf)
     rf2<-rdmc*exp(prat)
     rf2[rf2<0]<-0
