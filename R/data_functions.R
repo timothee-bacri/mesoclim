@@ -374,8 +374,7 @@ subset_climdata<-function (climdata, sdatetime, edatetime) {
       sel <- ifelse(sel > nlyr(climdata), nlyr(climdata),
                     sel)
       newdata <- subset(climdata, sel)
-    }
-    else {
+    } else {
       newdata <- NA
     }
   }
